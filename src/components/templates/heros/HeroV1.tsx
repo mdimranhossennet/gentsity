@@ -216,7 +216,7 @@ export default function HeroV1({ banners }: HeroSliderProps) {
           </button>
 
           {/* Custom Pagination Container */}
-          <div className="absolute bottom-2.5 sm:bottom-12 left-0 w-full z-30 flex justify-center px-4 sm:px-10">
+          <div className="absolute bottom-2.5 sm:bottom-12 left-0 w-full z-30 hidden sm:flex justify-center px-4 sm:px-10">
             <div className="flex items-center gap-1 sm:gap-2">
               {slides.map((_, index) => (
                 <button
