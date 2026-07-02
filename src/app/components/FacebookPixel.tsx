@@ -52,7 +52,7 @@ export default function FacebookPixel({
     <>
       <Script
         id="fb-pixel"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}
         dangerouslySetInnerHTML={{
           __html: `
