@@ -34,7 +34,8 @@ import {
 } from '@/components/ui/select';
 import { fbEvent } from '@/lib/fpixel';
 import { ttEvent } from '@/lib/tiktok';
-import { divisions, bdDivisions, bdLocations } from '@/lib/bd-locations';
+
+
 
 import {
   Dialog,
@@ -48,11 +49,10 @@ import {
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'নাম আবশ্যক'),
   phone: z.string().min(11, 'সঠিক মোবাইল নম্বর দিন'),
-  email: z.string().email('সঠিক ইমেইল এড্রেস দিন').optional().or(z.literal('')),
   street: z.string().min(5, 'ঠিকানা আবশ্যক'),
-  division: z.string().min(1, 'বিভাগ আবশ্যক'),
-  district: z.string().min(1, 'জেলা আবশ্যক'),
-  thana: z.string().min(1, 'থানা আবশ্যক'),
+  deliveryArea: z.enum(['inside', 'outside'], {
+    message: 'ডেলিভারি এলাকা নির্বাচন করুন',
+  }),
   paymentMethod: z.enum(['COD', 'Online', 'Manual'], {
     message: 'Select a payment method'
   }),
@@ -84,11 +84,8 @@ export default function CheckoutPage() {
     defaultValues: {
       fullName: '',
       phone: '',
-      email: '',
       street: '',
-      division: '',
-      district: '',
-      thana: '',
+      deliveryArea: 'inside',
       paymentMethod: 'COD',
     },
   });
@@ -102,10 +99,7 @@ export default function CheckoutPage() {
     }
   }, [form.watch('paymentMethod')]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const selectedDivision = form.watch('division');
-  const selectedDistrict = form.watch('district');
-  const availableDistricts = selectedDivision ? bdDivisions[selectedDivision] : [];
-  const availableThanas = selectedDistrict ? bdLocations[selectedDistrict] : [];
+
 
   useEffect(() => {
     async function fetchLoyaltyAndSyncCart() {
@@ -124,11 +118,8 @@ export default function CheckoutPage() {
             form.reset({
               fullName: profileData.name || '',
               phone: profileData.phone || '',
-              email: profileData.email || '',
               street: profileData.address || '',
-              division: profileData.division || '',
-              district: profileData.district || '',
-              thana: profileData.thana || '',
+              deliveryArea: (profileData.division?.toLowerCase().includes('dhaka') || profileData.district?.toLowerCase().includes('dhaka')) ? 'inside' : 'outside',
               paymentMethod: 'COD',
             });
           }
@@ -310,13 +301,13 @@ export default function CheckoutPage() {
         shippingAddress: {
           fullName: values.fullName,
           phone: values.phone,
-          email: values.email || profile?.email || `${values.phone}@store.com`,
+          email: profile?.email || `${values.phone}@store.com`,
           street: values.street,
-          city: values.thana,
-          state: values.district,
-          division: values.division,
-          district: values.district,
-          thana: values.thana,
+          city: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+          state: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+          division: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+          district: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+          thana: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
           zipCode: '0000',
           country: 'Bangladesh'
         },
@@ -440,7 +431,8 @@ export default function CheckoutPage() {
     return sum + Math.max(0, itemBasePrice - item.price) * item.quantity;
   }, 0);
 
-  const isDhaka = selectedDivision?.toLowerCase().includes('dhaka') || selectedDistrict?.toLowerCase().includes('dhaka');
+  const deliveryArea = form.watch('deliveryArea');
+  const isDhaka = deliveryArea === 'inside';
   const deliveryCharge = items.length > 0 ? (
     isFreeDelivery ? 0 : (isDhaka ? chargeInsideDhaka : chargeOutsideDhaka)
   ) : 0;
@@ -459,9 +451,7 @@ export default function CheckoutPage() {
     watchedFields.fullName?.trim() &&
     watchedFields.phone?.trim() &&
     watchedFields.street?.trim() &&
-    watchedFields.division &&
-    watchedFields.district &&
-    watchedFields.thana &&
+    watchedFields.deliveryArea &&
     (watchedFields.paymentMethod !== 'Manual' || (selectedMethod?.id && manualDetails.senderNumber && manualDetails.transactionId))
   );
 
@@ -638,15 +628,33 @@ export default function CheckoutPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="deliveryArea"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          ইমেইল এড্রেস{' '}
-                          <span className="text-muted-foreground font-normal text-xs">(ঐচ্ছিক)</span>
-                        </FormLabel>
+                      <FormItem className="space-y-3">
+                        <FormLabel className="font-bold">ডেলিভারি এলাকা</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="যেমন: example@mail.com" {...field} className="h-11 focus-visible:ring-primary/20" />
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-row space-x-6 pt-1"
+                          >
+                            <FormItem className="flex items-center space-x-2 space-y-0 cursor-pointer">
+                              <FormControl>
+                                <RadioGroupItem value="inside" />
+                              </FormControl>
+                              <FormLabel className="font-medium cursor-pointer text-sm">
+                                ঢাকার ভিতরে
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0 cursor-pointer">
+                              <FormControl>
+                                <RadioGroupItem value="outside" />
+                              </FormControl>
+                              <FormLabel className="font-medium cursor-pointer text-sm">
+                                ঢাকার বাইরে
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -657,101 +665,14 @@ export default function CheckoutPage() {
                     name="street"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ঠিকানা</FormLabel>
+                        <FormLabel>সম্পূর্ণ ঠিকানা</FormLabel>
                         <FormControl>
-                          <Input placeholder="বাসা নং, রোড নং, এলাকা" {...field} className="h-11 focus-visible:ring-primary/20" />
+                          <Input placeholder="গ্রাম/বাসা নং, রোড নং, এলাকা, থানা, জেলা" {...field} className="h-11 focus-visible:ring-primary/20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="division"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>বিভাগ</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              form.setValue('district', '');
-                              form.setValue('thana', '');
-                            }}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-11 focus:ring-primary/20">
-                                <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {divisions.map((div) => (
-                                <SelectItem key={div} value={div}>{div}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="district"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>জেলা</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              form.setValue('thana', '');
-                            }}
-                            value={field.value}
-                            disabled={!selectedDivision}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-11 focus:ring-primary/20">
-                                <SelectValue placeholder="জেলা নির্বাচন করুন" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {availableDistricts?.map((dist) => (
-                                <SelectItem key={dist} value={dist}>{dist}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="thana"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>থানা</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            disabled={!selectedDistrict}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-11 focus:ring-primary/20">
-                                <SelectValue placeholder="থানা নির্বাচন করুন" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {availableThanas?.map((thana) => (
-                                <SelectItem key={thana} value={thana}>{thana}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </CardContent>
               </Card>
 

@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
         await connectToDatabase();
         const settings = await GlobalSettings.findOne().sort({ updatedAt: -1 }).lean();
 
-        const pixelId = settings?.tiktokPixelId || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
-        const accessToken = settings?.tiktokAccessToken || process.env.TIKTOK_ACCESS_TOKEN;
+        const pixelId = settings?.tiktokPixelId;
+        const accessToken = settings?.tiktokAccessToken;
 
         if (!pixelId || !accessToken) {
             // TikTok not configured — skip silently (not an error)

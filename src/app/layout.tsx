@@ -293,18 +293,18 @@ export default async function RootLayout({
             <GoogleTagManager gtmId={settings.googleTagManagerId} />
           )}
 
-          {(settings?.metaPixelId || process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID) && (
+          {settings?.metaPixelId && (
             <Suspense fallback={null}>
-              <FacebookPixel
-                pixelId={settings?.metaPixelId || process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID}
-              />
+               <FacebookPixel
+                 pixelId={settings.metaPixelId}
+               />
             </Suspense>
           )}
 
-          {(settings?.tiktokPixelId || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID) && (
+          {settings?.tiktokPixelId && (
             <Suspense fallback={null}>
               <TikTokPixel
-                pixelId={settings?.tiktokPixelId || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID}
+                pixelId={settings.tiktokPixelId}
               />
             </Suspense>
           )}
