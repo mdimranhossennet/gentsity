@@ -140,7 +140,7 @@ export default function FooterV1() {
           </div>
 
           <div className="flex flex-col items-center text-center md:items-start md:text-left md:pt-3">
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">Quick Links</h4>
+            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-foreground">Quick Links</h2>
             <ul className="grid gap-2 text-sm text-muted-foreground">
               {footerNav.map((link: any) => (
                 <li key={link.label}>
@@ -151,7 +151,7 @@ export default function FooterV1() {
           </div>
 
           <div className="flex flex-col items-center text-center md:items-start md:text-left md:pt-3">
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">Information</h4>
+            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-foreground">Information</h2>
             <ul className="grid gap-2 text-sm text-muted-foreground">
               <li>
                 <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
@@ -166,7 +166,7 @@ export default function FooterV1() {
           </div>
 
           <div className="flex flex-col items-center text-center md:items-start md:text-left md:pt-3">
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">Contact</h4>
+            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-foreground">Contact</h2>
             <ul className="grid gap-3 text-sm text-muted-foreground">
               <li className="flex items-start justify-center md:justify-start gap-3">
                 <MapPin size={16} className="text-primary mt-0.5 shrink-0" />

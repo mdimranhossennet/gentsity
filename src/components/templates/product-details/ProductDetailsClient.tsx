@@ -433,6 +433,8 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                   width={400}
                   height={400}
                   priority
+                  loading="eager"
+                  fetchPriority="high"
                   sizes="(max-width: 768px) 100vw, 400px"
                   className="h-full w-full object-contain p-4"
                 />
@@ -493,6 +495,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
               className={`relative h-20 w-20 flex-shrink-0 rounded-md border-2 overflow-hidden transition-all ${selectedImage === i ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-muted hover:border-primary/50'
                 }`}
               onClick={() => setSelectedImage(i)}
+              aria-label={`View product thumbnail image ${i + 1}`}
             >
               <Image src={img} alt="" width={80} height={80} className="h-full w-full object-cover" />
             </button>
@@ -682,6 +685,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 size="icon"
                 className="h-full rounded-none px-4 hover:bg-muted"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -692,6 +696,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 className="h-full rounded-none px-4 hover:bg-muted"
                 onClick={() => setQuantity(Math.min(displayStock || 0, quantity + 1))}
                 disabled={quantity >= (displayStock || 0)}
+                aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -734,7 +739,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
             <Button
               size="lg"
               variant="outline"
-              className="w-full h-14 rounded-full font-black text-xs uppercase tracking-[0.2em] border-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2"
+              className="w-full h-14 rounded-full font-black text-xs uppercase tracking-[0.2em] border-2 border-[#075E54] text-[#075E54] hover:bg-[#075E54] hover:text-white transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2"
               onClick={() => {
                 const message = encodeURIComponent(`Hi, I'm interested in ${product.name}. Price: ${CURRENCY_SYMBOL}${Math.round(displaySalePrice || displayPrice)}`);
                 

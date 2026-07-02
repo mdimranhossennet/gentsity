@@ -71,6 +71,7 @@ export function MobileBottomNavbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label={`Go to ${item.label}`}
                 className={`flex flex-col items-center justify-center gap-1 min-w-[64px] transition-all relative ${isActive ? 'text-primary scale-110' : 'text-muted-foreground'
                   }`}
               >
@@ -88,7 +89,10 @@ export function MobileBottomNavbar() {
 
           {/* Cart Item */}
           <CartDrawer>
-            <div className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-muted-foreground relative cursor-pointer active:scale-95 transition-transform">
+            <button 
+              aria-label="Open cart drawer"
+              className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-muted-foreground relative cursor-pointer active:scale-95 transition-transform"
+            >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5 stroke-[1.5]" />
                 {cartCount > 0 && (
@@ -97,12 +101,13 @@ export function MobileBottomNavbar() {
                   </span>
                 )}
               </div>
-            </div>
+            </button>
           </CartDrawer>
 
           {/* Search Item */}
           <button
             onClick={() => setIsSearchOpen(true)}
+            aria-label="Search products"
             className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-muted-foreground active:scale-95 transition-transform"
           >
             <Search className="h-5 w-5 stroke-[1.5]" />
@@ -112,7 +117,10 @@ export function MobileBottomNavbar() {
           {session ? (
             <Sheet open={isAccountOpen} onOpenChange={setIsAccountOpen}>
               <SheetTrigger asChild>
-                <button className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-muted-foreground active:scale-95 transition-transform outline-none">
+                <button 
+                  aria-label="User account menu"
+                  className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-muted-foreground active:scale-95 transition-transform outline-none"
+                >
                   <div className="h-6 w-6 rounded-full border border-primary/50 overflow-hidden">
                     <Image
                       src={session.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user?.name || '')}`}
@@ -224,6 +232,7 @@ export function MobileBottomNavbar() {
           ) : (
             <Link
               href="/login"
+              aria-label="Go to login page"
               className={`flex flex-col items-center justify-center gap-1 min-w-[64px] transition-all relative ${pathname === '/login' ? 'text-primary scale-110' : 'text-muted-foreground'
                 } active:scale-95 transition-transform`}
             >
