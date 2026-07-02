@@ -985,11 +985,11 @@ export default function CheckoutPage() {
                     disabled={loading || !isFormValid || syncData?.hasInsufficientStock}
                   >
                     {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                    {syncData?.hasInsufficientStock ? 'Insufficient Stock' : 'Place Order Now'}
+                    {syncData?.hasInsufficientStock ? 'পর্যাপ্ত স্টক নেই' : 'অর্ডার নিশ্চিত করুন'}
                   </Button>
                   {!isFormValid && (
                     <p className="text-[10px] font-bold text-muted-foreground text-center w-full uppercase tracking-widest">
-                      Please fill all delivery details to proceed
+                      অর্ডার সম্পন্ন করতে ডেলিভারি তথ্য পূরণ করুন
                     </p>
                   )}
                 </CardFooter>
