@@ -203,23 +203,14 @@ export default async function AboutPage() {
             >
               Leading Digital Agency In Bangladesh
             </a>
-            . Our team specializes in engineering high-performance, high-conversion web solutions with flawless user experiences. From crafting custom{' '}
+            . Our team specializes in engineering high-performance, high-conversion web solutions with flawless user experiences. As a premium{' '}
             <a
-              href="https://www.jiapixel.com/projects/web-design-for-healthcare-to-build-trust-and-authority"
+              href="https://www.jiapixel.com/projects/premium-fashion-web-design-agency-for-iconic-brands"
               target="_blank"
               rel="noopener"
               className="text-primary font-semibold hover:underline transition-all"
             >
-              Web Design for Healthcare
-            </a>{' '}
-            to developing robust systems like{' '}
-            <a
-              href="https://www.jiapixel.com/projects/hospital-web-design-for-modern-healthcare"
-              target="_blank"
-              rel="noopener"
-              className="text-primary font-semibold hover:underline transition-all"
-            >
-              Web Design for Modern Healthcare
+              Fashion Web Design Agency
             </a>
             , we combine beautiful aesthetics with clean, scalable code to empower brands and establish ultimate online authority.
           </p>
