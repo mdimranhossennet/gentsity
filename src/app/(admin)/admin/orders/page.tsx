@@ -50,7 +50,7 @@ import { printStickerInvoice } from '@/lib/sticker-generator';
 function OrdersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+  const [currentPage, setCurrentPage] = useState(Math.max(1, parseInt(searchParams.get('page') || '1')));
 
   const [orders, setOrders] = useState<any[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -81,7 +81,8 @@ function OrdersContent() {
 
   // Reset page when filters change
   useEffect(() => {
-    if (page > 1) {
+    if (currentPage > 1) {
+      setCurrentPage(1);
       const params = new URLSearchParams(searchParams.toString());
       params.delete('page');
       router.push(`/admin/orders?${params.toString()}`);
@@ -122,12 +123,12 @@ function OrdersContent() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pageVal = currentPage) => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams({
         all: 'true',
-        page: page.toString(),
+        page: pageVal.toString(),
         limit: '20',
         search: debouncedSearchTerm,
         status: statusFilter,
@@ -156,8 +157,15 @@ function OrdersContent() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [page, debouncedSearchTerm, statusFilter, dateFilter.from, dateFilter.to]);
+    fetchOrders(currentPage);
+  }, [currentPage, debouncedSearchTerm, statusFilter, dateFilter.from, dateFilter.to]);
+
+  useEffect(() => {
+    const pageFromParams = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    if (pageFromParams !== currentPage) {
+      setCurrentPage(pageFromParams);
+    }
+  }, [searchParams]);
 
   const filteredOrders = orders;
 
@@ -802,14 +810,13 @@ function OrdersContent() {
         {totalPages > 1 && (
           <div className="py-6 border-t bg-white px-6">
             <Pagination
-              currentPage={page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              baseUrl="/admin/orders"
-              query={{
-                search: searchTerm,
-                status: statusFilter,
-                from: dateFilter.from,
-                to: dateFilter.to
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('page', page.toString());
+                router.push(`?${params.toString()}`);
               }}
             />
           </div>

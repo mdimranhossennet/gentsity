@@ -67,7 +67,7 @@ interface UserData {
 function UsersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+  const [currentPage, setCurrentPage] = useState(Math.max(1, parseInt(searchParams.get('page') || '1')));
 
   const [users, setUsers] = useState<UserData[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -82,7 +82,7 @@ function UsersContent() {
   const { data: session } = useSession();
   const isSuperAdmin = (session?.user as any)?.role === 'super_admin';
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = currentPage) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/users?page=${page}&limit=20`);
@@ -100,8 +100,15 @@ function UsersContent() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [page]);
+    fetchUsers(currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    const pageFromParams = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    if (pageFromParams !== currentPage) {
+      setCurrentPage(pageFromParams);
+    }
+  }, [searchParams]);
 
   const openUserDetails = (user: UserData) => {
     setSelectedUser(user);
@@ -372,7 +379,16 @@ function UsersContent() {
         </Table>
         {totalPages > 1 && (
           <div className="py-6 border-t bg-white px-6">
-            <Pagination currentPage={page} totalPages={totalPages} baseUrl="/admin/users" />
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('page', page.toString());
+                router.push(`?${params.toString()}`);
+              }}
+            />
           </div>
         )}
       </div>
