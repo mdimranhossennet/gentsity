@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -62,8 +64,14 @@ interface UserData {
   lastOrderDate?: string;
 }
 
-export default function UsersPage() {
+function UsersContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+
   const [users, setUsers] = useState<UserData[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -75,11 +83,14 @@ export default function UsersPage() {
   const isSuperAdmin = (session?.user as any)?.role === 'super_admin';
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch(`/api/admin/users?page=${page}&limit=20`);
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.users || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalCount(data.totalCount || 0);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
@@ -90,7 +101,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page]);
 
   const openUserDetails = (user: UserData) => {
     setSelectedUser(user);
@@ -217,7 +228,7 @@ export default function UsersPage() {
             </Button>
           )}
           <div className="bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20">
-            <span className="text-primary font-bold text-sm">{users.length} Total Users</span>
+            <span className="text-primary font-bold text-sm">{totalCount} Total Users</span>
           </div>
         </div>
       </div>
@@ -359,6 +370,11 @@ export default function UsersPage() {
             )}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+          <div className="py-6 border-t bg-white px-6">
+            <Pagination currentPage={page} totalPages={totalPages} baseUrl="/admin/users" />
+          </div>
+        )}
       </div>
 
       {/* User Details Modal */}
@@ -541,6 +557,18 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[300px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <UsersContent />
+    </Suspense>
   );
 }
 

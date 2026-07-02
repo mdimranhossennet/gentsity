@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -45,10 +47,17 @@ import { generateInvoicePDF } from '@/lib/invoice-generator';
 import { printStickerInvoice } from '@/lib/sticker-generator';
 
 
-export default function OrdersPage() {
+function OrdersContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+
   const [orders, setOrders] = useState<any[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState({
     from: '',
@@ -61,6 +70,23 @@ export default function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+
+  // Debounce search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    if (page > 1) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('page');
+      router.push(`/admin/orders?${params.toString()}`);
+    }
+  }, [debouncedSearchTerm, statusFilter, dateFilter.from, dateFilter.to]);
 
   const handleDownloadInvoice = async (order: any) => {
     try {
@@ -91,20 +117,31 @@ export default function OrdersPage() {
       return;
     }
     toast.info('Preparing sticker invoice...');
-    // Open each sticker as a PDF in its own window - same pattern as invoice
     for (const order of toPrint) {
       await printStickerInvoice(order, settings);
     }
   };
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/orders?all=true');
+      const queryParams = new URLSearchParams({
+        all: 'true',
+        page: page.toString(),
+        limit: '20',
+        search: debouncedSearchTerm,
+        status: statusFilter,
+        from: dateFilter.from,
+        to: dateFilter.to
+      });
+      const res = await fetch(`/api/orders?${queryParams.toString()}`);
       if (!res.ok) {
         throw new Error(`Failed to load orders: ${res.status} ${res.statusText}`);
       }
       const data = await res.json();
-      setOrders(data);
+      setOrders(data.orders || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalCount(data.totalCount || 0);
 
       // Also fetch settings for the invoice generator
       const settingsRes = await fetch('/api/settings');
@@ -120,34 +157,9 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page, debouncedSearchTerm, statusFilter, dateFilter.from, dateFilter.to]);
 
-  const filteredOrders = orders.filter((order) => {
-    const search = searchTerm.toLowerCase();
-
-    // 1. Search matching
-    const matchesSearch =
-      (order._id?.toLowerCase() || '').includes(search) ||
-      (order.user?.email?.toLowerCase() || '').includes(search) ||
-      (order.user?.name?.toLowerCase() || '').includes(search) ||
-      (order.shippingAddress?.fullName?.toLowerCase() || '').includes(search) ||
-      (order.shippingAddress?.phone?.toLowerCase() || '').includes(search);
-
-    // 2. Status matching
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-
-    // 3. Date matching
-    let matchesDate = true;
-    if (dateFilter.from && dateFilter.to) {
-      const orderDate = new Date(order.createdAt);
-      const fromDate = new Date(dateFilter.from);
-      const toDate = new Date(dateFilter.to);
-      toDate.setHours(23, 59, 59, 999);
-      matchesDate = orderDate >= fromDate && orderDate <= toDate;
-    }
-
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const filteredOrders = orders;
 
   const toggleSelectAll = () => {
     const filteredIds = filteredOrders.map(o => o._id);
@@ -488,12 +500,11 @@ export default function OrdersPage() {
                   >
                     <div className="flex items-center justify-between w-full">
                       <span>{status}</span>
-                      <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
-                        {status === 'All'
-                          ? orders.length
-                          : orders.filter(o => o.status === status).length
-                        }
-                      </Badge>
+                      {status === 'All' && (
+                        <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                          {totalCount}
+                        </Badge>
+                      )}
                     </div>
                   </DropdownMenuItem>
                 ))}
@@ -788,6 +799,21 @@ export default function OrdersPage() {
             )}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+          <div className="py-6 border-t bg-white px-6">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              baseUrl="/admin/orders"
+              query={{
+                search: searchTerm,
+                status: statusFilter,
+                from: dateFilter.from,
+                to: dateFilter.to
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <OrderDetailsDialog
@@ -807,6 +833,18 @@ export default function OrdersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[300px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <OrdersContent />
+    </Suspense>
   );
 }
 

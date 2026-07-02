@@ -13,15 +13,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.max(1, parseInt(searchParams.get('limit') || '20'));
+
     await connectToDatabase();
 
-    // Aggregate users with their order stats
+    const matchQuery = { role: { $ne: 'super_admin' as const } };
+    const totalCount = await User.countDocuments(matchQuery);
+
+    // Aggregate users with their order stats (efficiently skip/limit before lookup)
     const users = await User.aggregate([
-      { 
-        $match: { 
-          role: { $ne: 'super_admin' } // Hide super admins
-        } 
-      },
+      { $match: matchQuery },
+      { $sort: { createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
       {
         $lookup: {
           from: 'orders',
@@ -44,11 +50,15 @@ export async function GET(req: NextRequest) {
           totalSpent: { $sum: '$userOrders.totalAmount' },
           lastOrderDate: { $max: '$userOrders.createdAt' }
         }
-      },
-      { $sort: { createdAt: -1 } }
+      }
     ]);
 
-    return NextResponse.json(users);
+    return NextResponse.json({
+      users,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     console.error('Fetch Users Error:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });

@@ -497,14 +497,56 @@ export async function GET(req: NextRequest) {
     const fetchAll = searchParams.get('all') === 'true';
     const isAdmin = ['admin', 'super_admin'].includes((session.user as any)?.role);
 
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.max(1, parseInt(searchParams.get('limit') || '20'));
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const fromDate = searchParams.get('from') || '';
+    const toDate = searchParams.get('to') || '';
+
     await connectToDatabase();
 
     let query: any = { deletedAt: null };
     if (fetchAll && isAdmin) {
-      // Admins can see all orders
-      query = { deletedAt: null };
+      if (status && status !== 'All') {
+        query.status = status;
+      }
+      if (fromDate || toDate) {
+        query.createdAt = {};
+        if (fromDate) query.createdAt.$gte = new Date(fromDate);
+        if (toDate) {
+          const end = new Date(toDate);
+          end.setHours(23, 59, 59, 999);
+          query.createdAt.$lte = end;
+        }
+      }
+      if (search) {
+        const userIds = await User.find({
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ]
+        }).select('_id');
+        
+        const searchConditions: any[] = [
+          { "shippingAddress.fullName": { $regex: search, $options: 'i' } },
+          { "shippingAddress.phone": { $regex: search, $options: 'i' } }
+        ];
+
+        if (mongoose.Types.ObjectId.isValid(search)) {
+          searchConditions.push({ _id: search });
+        } else if (search.length >= 8) {
+          searchConditions.push({ shortId: { $regex: search, $options: 'i' } });
+        }
+
+        if (userIds.length > 0) {
+          searchConditions.push({ user: { $in: userIds.map(u => u._id) } });
+        }
+
+        query.$and = query.$and || [];
+        query.$and.push({ $or: searchConditions });
+      }
     } else {
-      // Normal users (or admins without ?all=true) see their own orders
       const userId = (session.user as any).id;
       if (!userId) {
         return NextResponse.json({ message: 'User ID missing from session' }, { status: 400 });
@@ -512,9 +554,24 @@ export async function GET(req: NextRequest) {
       query = { user: userId, deletedAt: null };
     }
 
-    const orders = await Order.find(query)
-      .sort({ createdAt: -1 })
-      .populate('user', 'name email'); // Populate user info for admin view
+    const totalCount = await Order.countDocuments(query);
+    
+    let ordersQuery = Order.find(query).sort({ createdAt: -1 });
+
+    if (fetchAll && isAdmin) {
+      ordersQuery = ordersQuery.skip((page - 1) * limit).limit(limit);
+    }
+
+    const orders = await ordersQuery.populate('user', 'name email');
+
+    if (fetchAll && isAdmin) {
+      return NextResponse.json({
+        orders,
+        totalCount,
+        page,
+        totalPages: Math.ceil(totalCount / limit)
+      });
+    }
 
     return NextResponse.json(orders);
   } catch (error) {
