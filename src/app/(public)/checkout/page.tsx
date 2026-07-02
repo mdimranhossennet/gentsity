@@ -485,7 +485,12 @@ export default function CheckoutPage() {
     </div>
   );
 
-  if (items.length === 0) return null;
+  if (items.length === 0) return (
+    <div className="container min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-muted-foreground font-medium">Your cart is empty. Redirecting to shop...</p>
+    </div>
+  );
 
   return (
     <div className="container px-4 md:px-6 py-12">
@@ -502,7 +507,17 @@ export default function CheckoutPage() {
                 {items.map((item, index) => (
                   <div key={`${item.productId}-${item.color || 'no-color'}-${item.size || 'no-size'}-${index}`} className="flex gap-4 items-start relative group">
                     <div className="h-16 w-16 rounded-md border bg-muted flex-shrink-0 relative overflow-hidden">
-                      {item.image && <Image src={item.image} alt={item.name || 'Product'} width={64} height={64} className="h-full w-full object-cover" />}
+                      {item.image && (
+                        <Image 
+                          src={item.image} 
+                          alt={item.name || 'Product'} 
+                          width={64} 
+                          height={64} 
+                          priority={index === 0}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          className="h-full w-full object-cover" 
+                        />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex justify-between items-start gap-2 w-full min-w-0">
