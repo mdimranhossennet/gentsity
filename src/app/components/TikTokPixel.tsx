@@ -44,7 +44,7 @@ export default function TikTokPixel({
     <>
       <Script
         id="tiktok-pixel"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         onLoad={() => setScriptLoaded(true)}
         dangerouslySetInnerHTML={{
           __html: `

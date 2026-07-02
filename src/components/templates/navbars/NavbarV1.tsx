@@ -203,7 +203,7 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 md:relative w-full bg-background border-b md:border-b-0">
         <div className="container mx-auto px-2 md:px-4">
           {/* Middle Main Row: Search | Logo | Icons */}
-          <div className="flex h-14 md:h-20 items-center justify-between px-1 md:px-6 border-b border-muted/30">
+          <div className="relative flex h-14 md:h-20 items-center justify-between px-1 md:px-6 border-b border-muted/30">
 
             {/* Desktop Search (Left) */}
             <div className="hidden md:flex flex-1 items-center max-w-[280px]">
@@ -286,7 +286,7 @@ export default function Navbar() {
             </div>
 
             {/* Logo (Centered in desktop, Left-ish in mobile) */}
-            <div className="flex items-center justify-center flex-1 md:flex-initial">
+            <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center justify-center">
               <Logo textClassName="text-lg md:text-2xl whitespace-nowrap" />
             </div>
 
