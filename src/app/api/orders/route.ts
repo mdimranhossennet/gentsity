@@ -298,8 +298,8 @@ export async function POST(req: NextRequest) {
     const freeDeliveryThreshold = settings?.freeDeliveryThreshold || 0;
     const isFreeDelivery = freeDeliveryThreshold > 0 && serverComputedTotal >= freeDeliveryThreshold;
 
-    const chargeInsideDhaka = settings?.deliveryChargeInsideDhaka || 60;
-    const chargeOutsideDhaka = settings?.deliveryChargeOutsideDhaka || 120;
+    const chargeInsideDhaka = settings?.deliveryChargeInsideDhaka ?? 60;
+    const chargeOutsideDhaka = settings?.deliveryChargeOutsideDhaka ?? 120;
 
     const serverComputedDeliveryCharge = isFreeDelivery ? 0 : (isDhaka ? chargeInsideDhaka : chargeOutsideDhaka);
 
