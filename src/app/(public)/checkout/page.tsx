@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,9 +20,9 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, CreditCard, Truck, ShoppingBag, CheckCircle2, Plus, Minus, X, Globe } from 'lucide-react';
+import { Loader2, CreditCard, Truck, ShoppingBag, CheckCircle2, Plus, Minus, X, Globe, ArrowRight, PartyPopper, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -60,7 +58,7 @@ const checkoutSchema = z.object({
 
 type CheckoutValues = z.infer<typeof checkoutSchema>;
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { items, totalAmount, isHydrated } = useAppSelector((state) => state.cart);
@@ -73,6 +71,10 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showFailModal, setShowFailModal] = useState(false);
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
   const [manualDetails, setManualDetails] = useState({
     senderNumber: '',
@@ -98,6 +100,21 @@ export default function CheckoutPage() {
       setManualDetails({ senderNumber: '', transactionId: '' });
     }
   }, [form.watch('paymentMethod')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle SSLCommerz redirect back — show modal based on ?order= param
+  useEffect(() => {
+    const orderStatus = searchParams.get('order');
+    const orderId = searchParams.get('id');
+    if (orderStatus === 'success') {
+      setSuccessOrderId(orderId);
+      setShowSuccessModal(true);
+      // Clean URL without reload
+      window.history.replaceState({}, '', '/checkout');
+    } else if (orderStatus === 'failed') {
+      setShowFailModal(true);
+      window.history.replaceState({}, '', '/checkout');
+    }
+  }, [searchParams]);
 
 
 
@@ -267,24 +284,6 @@ export default function CheckoutPage() {
 
   const submissionSucceededRef = useRef(false);
 
-  const [canRedirect, setCanRedirect] = useState(false);
-
-  // Delay the redirect permission to allow Redux state to fully settle
-  useEffect(() => {
-    if (isHydrated) {
-      const timer = setTimeout(() => setCanRedirect(true), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isHydrated]);
-
-  useEffect(() => {
-    // Only redirect if hydration is complete, the grace period (canRedirect) has passed, 
-    // and the cart is still truly empty.
-    if (canRedirect && isHydrated && items.length === 0 && !loading && !submissionSucceededRef.current) {
-      router.push('/shop');
-    }
-  }, [canRedirect, isHydrated, items.length, router, loading]);
-
   const onSubmit = async (values: CheckoutValues) => {
     setLoading(true);
     try {
@@ -332,6 +331,41 @@ export default function CheckoutPage() {
         const order = await response.json();
         submissionSucceededRef.current = true;
 
+        // Track Purchase event immediately on API success
+        try {
+          const safeItems = Array.isArray(order.items) ? order.items : items;
+          const fullName = values.fullName || '';
+          const nameParts = fullName.trim().split(/\s+/);
+
+          const purchaseEventData = {
+            value: order.totalAmount ?? totalAmount,
+            currency: 'BDT',
+            content_ids: safeItems.map((i: any) => i.product?._id || i.product || i.productId),
+            content_type: 'product',
+            num_items: safeItems.length,
+            contents: safeItems.map((i: any) => ({
+              id: i.product?._id || i.product || i.productId,
+              quantity: i.quantity,
+              item_price: i.price,
+            })),
+          };
+
+          const purchaseUserData = {
+            em: profile?.email || '',
+            ph: values.phone,
+            fn: nameParts[0] || '',
+            ln: nameParts.slice(1).join(' ') || '',
+            ct: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+            st: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
+            country: 'bd',
+          };
+
+          fbEvent('Purchase', purchaseEventData, purchaseUserData, order._id);
+          ttEvent('Purchase', purchaseEventData, purchaseUserData, order._id);
+        } catch (trackingError) {
+          console.error('Tracking error:', trackingError);
+        }
+
         if (values.paymentMethod === 'Online') {
           // Initialize SSLCommerz Payment
           const initRes = await fetch('/api/payment/init', {
@@ -352,14 +386,14 @@ export default function CheckoutPage() {
             toast.error(initError.message || 'Failed to initialize payment gateway. Please try paying from your dashboard.');
             // Still clear cart if the order was created successfully
             dispatch(clearCart());
-            router.push(`/checkout/success?id=${order._id}`);
+            setSuccessOrderId(order._id);
+            setShowSuccessModal(true);
           }
         } else {
-          // COD / Manual Success — clear cart and redirect to success page
-          // Purchase event will be fired from the success page after fetching order details
+          // COD / Manual Success — clear cart and show success modal
           dispatch(clearCart());
-          toast.success('Order placed successfully!');
-          router.push(`/checkout/success?id=${order._id}`);
+          setSuccessOrderId(order._id);
+          setShowSuccessModal(true);
         }
       } else {
         const error = await response.json();
@@ -468,17 +502,24 @@ export default function CheckoutPage() {
     }
   };
 
-  // Show loading state or nothing while hydrating to prevent flash of "empty cart" redirect
-  if (!isHydrated) return (
-    <div className="container min-h-[60vh] flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-
+  // Show empty cart UI instead of redirecting
   if (items.length === 0) return (
-    <div className="container min-h-[60vh] flex flex-col items-center justify-center gap-4">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="text-muted-foreground font-medium">Your cart is empty. Redirecting to shop...</p>
+    <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-6 py-20 text-center">
+      <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+        <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-black tracking-tight">আপনার কার্ট খালি!</h2>
+        <p className="text-muted-foreground text-sm max-w-xs">
+          চেকআউট করতে আগে কিছু পণ্য কার্টে যোগ করুন।
+        </p>
+      </div>
+      <Button
+        onClick={() => router.push('/shop')}
+        className="rounded-full px-8 h-11 font-bold"
+      >
+        শপে যান <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
     </div>
   );
 
@@ -1078,7 +1119,105 @@ export default function CheckoutPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ✅ Order Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0 shadow-2xl">
+          <div className="flex flex-col items-center text-center p-8 gap-6">
+            {/* Animated icon */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center border-4 border-green-500/20 shadow-xl shadow-green-500/20 animate-in zoom-in-50 duration-500">
+                <PartyPopper className="w-12 h-12 text-green-500" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-white" />
+              </div>
+            </div>
+
+            {/* Text */}
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight">অর্ডার সফল হয়েছে!</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। আমরা শীঘ্রই আপনার সাথে যোগাযোগ করবো।
+              </p>
+              {successOrderId && (
+                <p className="text-xs font-mono bg-muted px-3 py-1.5 rounded-full inline-block text-muted-foreground">
+                  Order ID: <span className="font-bold text-foreground">#{successOrderId.slice(-8).toUpperCase()}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3 w-full pt-2">
+              <Button
+                onClick={() => { setShowSuccessModal(false); router.push('/shop'); }}
+                className="w-full h-11 rounded-full font-bold shadow-lg shadow-primary/20"
+              >
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                শপিং চালিয়ে যান
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setShowSuccessModal(false); router.push('/dashboard'); }}
+                className="w-full h-11 rounded-full font-bold"
+              >
+                আমার অর্ডার দেখুন
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ❌ Payment Failed Modal */}
+      <Dialog open={showFailModal} onOpenChange={setShowFailModal}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0 shadow-2xl">
+          <div className="flex flex-col items-center text-center p-8 gap-6">
+            {/* Icon */}
+            <div className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center border-4 border-destructive/20 shadow-xl shadow-destructive/20 animate-in zoom-in-50 duration-500">
+              <XCircle className="w-12 h-12 text-destructive" />
+            </div>
+
+            {/* Text */}
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-destructive">পেমেন্ট ব্যর্থ হয়েছে</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                আপনার পেমেন্ট সম্পন্ন হয়নি। পুনরায় চেষ্টা করুন অথবা COD পেমেন্ট বেছে নিন।
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3 w-full pt-2">
+              <Button
+                onClick={() => setShowFailModal(false)}
+                className="w-full h-11 rounded-full font-bold"
+              >
+                পুনরায় চেষ্টা করুন
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => { setShowFailModal(false); router.push('/shop'); }}
+                className="w-full h-11 rounded-full font-bold"
+              >
+                শপে ফিরে যান
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="container py-24 flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
 
