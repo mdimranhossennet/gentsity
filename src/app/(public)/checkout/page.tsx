@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
@@ -457,8 +459,8 @@ function CheckoutContent() {
   const freeDeliveryThreshold = settings?.freeDeliveryThreshold || 0;
   const isFreeDelivery = freeDeliveryThreshold > 0 && totalAmount >= freeDeliveryThreshold;
 
-  const chargeInsideDhaka = settings?.deliveryChargeInsideDhaka || 60;
-  const chargeOutsideDhaka = settings?.deliveryChargeOutsideDhaka || 120;
+  const chargeInsideDhaka = settings?.deliveryChargeInsideDhaka ?? 60;
+  const chargeOutsideDhaka = settings?.deliveryChargeOutsideDhaka ?? 120;
 
   const totalProductDiscount = items.reduce((sum, item) => {
     const itemBasePrice = item.basePrice || item.price;
@@ -502,8 +504,15 @@ function CheckoutContent() {
     }
   };
 
+  // Show loading state while hydrating to prevent flash of "empty cart" redirect
+  if (!isHydrated) return (
+    <div className="container min-h-[60vh] flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
   // Show empty cart UI instead of redirecting
-  if (items.length === 0) return (
+  if (items.length === 0 && !showSuccessModal && !showFailModal) return (
     <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-6 py-20 text-center">
       <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
         <ShoppingBag className="w-12 h-12 text-muted-foreground" />
