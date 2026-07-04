@@ -260,19 +260,12 @@ export default function ProductCardV6({ product, isFlashSale, priority }: Produc
         {/* Action Buttons - Visible on hover for Desktop, Always for Mobile */}
         <div className="flex flex-col sm:flex-row gap-2 pt-2 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0">
           <Button 
-            variant="outline" 
             size="sm" 
-            className="flex-1 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold text-[10px] sm:text-xs h-11 sm:h-10 transition-all active:scale-95 py-2"
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" /> Cart
-          </Button>
-          <Button 
-            size="sm" 
-            className="flex-1 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] sm:text-xs h-11 sm:h-10 shadow-lg shadow-primary/20 transition-all active:scale-95 py-2"
+            className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] sm:text-xs h-11 sm:h-10 shadow-lg shadow-primary/20 transition-all active:scale-95 py-2"
             onClick={handleBuyNow}
+            disabled={product.stock === 0}
           >
-            Buy Now
+            {product.stock === 0 ? 'Out of Stock' : 'অর্ডার করুন'}
           </Button>
         </div>
       </div>

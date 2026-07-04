@@ -353,15 +353,18 @@ function CheckoutContent() {
             })),
           };
 
-          const purchaseUserData = {
+          const purchaseUserData: any = {
             em: profile?.email || '',
             ph: values.phone,
             fn: nameParts[0] || '',
             ln: nameParts.slice(1).join(' ') || '',
-            ct: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
-            st: values.deliveryArea === 'inside' ? 'Dhaka' : 'Outside Dhaka',
             country: 'bd',
           };
+
+          if (values.deliveryArea === 'inside') {
+            purchaseUserData.ct = 'Dhaka';
+            purchaseUserData.st = 'Dhaka';
+          }
 
           fbEvent('Purchase', purchaseEventData, purchaseUserData, order._id);
           ttEvent('Purchase', purchaseEventData, purchaseUserData, order._id);
