@@ -713,24 +713,15 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
             </Button>
           </div>
 
-          {/* Row 2: Add to Cart and Buy Now */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Row 2: Buy Now (Order Now) */}
+          <div>
             <Button
               size="lg"
-              variant="outline"
-              className="h-14 rounded-full font-black text-[10px] sm:text-sm uppercase tracking-[0.1em] sm:tracking-[0.2em] border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all hover:scale-[1.02] active:scale-95"
-              onClick={handleAddToCart}
-              disabled={(displayStock || 0) === 0}
-            >
-              <ShoppingCart className="mr-2 h-5 w-5 hidden sm:block" /> Add to Cart
-            </Button>
-            <Button
-              size="lg"
-              className="h-14 rounded-full font-black text-[10px] sm:text-sm uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/25"
+              className="w-full h-14 rounded-full font-black text-xs uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/25"
               onClick={handleBuyNow}
               disabled={(displayStock || 0) === 0}
             >
-              Buy Now
+              অর্ডার করুন
             </Button>
           </div>
 

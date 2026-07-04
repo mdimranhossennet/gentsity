@@ -85,6 +85,7 @@ function CheckoutContent() {
   const [paymentDetailTab, setPaymentDetailTab] = useState<'phone' | 'trx'>('phone');
   const form = useForm<CheckoutValues>({
     resolver: zodResolver(checkoutSchema),
+    mode: 'onChange',
     defaultValues: {
       fullName: '',
       phone: '',
@@ -483,10 +484,13 @@ function CheckoutContent() {
 
   // Validation check for mandatory fields to show/hide the order button
   const watchedFields = form.watch();
+  const isPhoneValid = /^(?:01)[3-9]\d{8}$/.test(watchedFields.phone || '');
+  const isAddressValid = (watchedFields.street || '').trim().length >= 5;
+  const isNameValid = (watchedFields.fullName || '').trim().length >= 2;
   const isFormValid = !!(
-    watchedFields.fullName?.trim() &&
-    watchedFields.phone?.trim() &&
-    watchedFields.street?.trim() &&
+    isNameValid &&
+    isPhoneValid &&
+    isAddressValid &&
     watchedFields.deliveryArea &&
     (watchedFields.paymentMethod !== 'Manual' || (selectedMethod?.id && manualDetails.senderNumber && manualDetails.transactionId))
   );
