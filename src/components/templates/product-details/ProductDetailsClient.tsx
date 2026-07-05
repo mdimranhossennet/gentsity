@@ -717,7 +717,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
           <div>
             <Button
               size="lg"
-              className="w-full h-14 rounded-full font-black text-xs uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/25"
+              className="w-full h-14 rounded-full font-black text-base uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/25"
               onClick={handleBuyNow}
               disabled={(displayStock || 0) === 0}
             >

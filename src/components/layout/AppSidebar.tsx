@@ -172,10 +172,18 @@ function NavMain({ items, pathname, role }: { items: typeof data.navMain; pathna
   const { setOpenMobile, isMobile } = useSidebar()
 
   // Filter items based on role
-  const filteredItems = items.map(item => ({
-    ...item,
-    items: item.items.filter((subItem: any) => !subItem.superOnly || role === 'super_admin')
-  })).filter(item => item.items.length > 0);
+  const filteredItems = items
+    .filter(item => {
+      if (role === 'manager') {
+        const allowedSections = ["Overview", "Product Management", "Sales & Orders", "Blogs"];
+        return allowedSections.includes(item.title);
+      }
+      return true;
+    })
+    .map(item => ({
+      ...item,
+      items: item.items.filter((subItem: any) => !subItem.superOnly || role === 'super_admin')
+    })).filter(item => item.items.length > 0);
 
   const handleLinkClick = () => {
     if (isMobile) {

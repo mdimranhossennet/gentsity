@@ -342,19 +342,28 @@ function UsersContent() {
                         <DropdownMenuGroup>
                           <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground px-2 py-1.5">Management</DropdownMenuLabel>
                           
-                          {user.role === 'user' ? (
-                            <DropdownMenuItem 
-                              onClick={() => handleUpdateRole(user._id, 'admin')}
-                              className="cursor-pointer text-blue-600 font-bold"
-                            >
-                              <ShieldCheck className="mr-2 h-4 w-4" /> Make Admin
-                            </DropdownMenuItem>
-                          ) : (
+                          {user.role !== 'user' && (
                             <DropdownMenuItem 
                               onClick={() => handleUpdateRole(user._id, 'user')}
                               className="cursor-pointer text-slate-600 font-bold"
                             >
                               <UserCog className="mr-2 h-4 w-4" /> Make User
+                            </DropdownMenuItem>
+                          )}
+                          {user.role !== 'manager' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleUpdateRole(user._id, 'manager')}
+                              className="cursor-pointer text-orange-600 font-bold"
+                            >
+                              <UserCog className="mr-2 h-4 w-4" /> Make Manager
+                            </DropdownMenuItem>
+                          )}
+                          {user.role !== 'admin' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleUpdateRole(user._id, 'admin')}
+                              className="cursor-pointer text-blue-600 font-bold"
+                            >
+                              <ShieldCheck className="mr-2 h-4 w-4" /> Make Admin
                             </DropdownMenuItem>
                           )}
 
@@ -384,6 +393,7 @@ function UsersContent() {
               totalPages={totalPages} 
               onPageChange={(page) => {
                 setCurrentPage(page);
+                fetchUsers(page);
                 const params = new URLSearchParams(searchParams.toString());
                 params.set('page', page.toString());
                 router.push(`?${params.toString()}`);

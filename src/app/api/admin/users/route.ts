@@ -118,7 +118,7 @@ export async function PATCH(req: NextRequest) {
 
     const { userId, role } = await req.json();
 
-    if (!userId || !['user', 'admin'].includes(role)) {
+    if (!userId || !['user', 'admin', 'manager'].includes(role)) {
       return NextResponse.json({ message: 'Invalid data' }, { status: 400 });
     }
 

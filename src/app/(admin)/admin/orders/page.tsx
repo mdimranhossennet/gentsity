@@ -814,6 +814,7 @@ function OrdersContent() {
               totalPages={totalPages}
               onPageChange={(page) => {
                 setCurrentPage(page);
+                fetchOrders(page);
                 const params = new URLSearchParams(searchParams.toString());
                 params.set('page', page.toString());
                 router.push(`?${params.toString()}`);

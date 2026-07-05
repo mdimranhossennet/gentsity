@@ -14,7 +14,7 @@ export const proxy = auth(async (req) => {
 
   // 1. Redirection for logged-in users on Auth routes (Login/Register)
   if (isAuthRoute && isLoggedIn) {
-    if (role === "admin" || role === "super_admin") {
+    if (role === "admin" || role === "super_admin" || role === "manager") {
       return NextResponse.redirect(new URL("/admin/dashboard", nextUrl));
     }
     return NextResponse.redirect(new URL("/", nextUrl));
@@ -26,9 +26,27 @@ export const proxy = auth(async (req) => {
       return NextResponse.redirect(new URL("/login", nextUrl));
     }
 
-    // Only allow admin/super_admin on admin routes
-    if (role !== "admin" && role !== "super_admin") {
+    // Only allow admin/super_admin/manager on admin routes
+    if (role !== "admin" && role !== "super_admin" && role !== "manager") {
       return NextResponse.redirect(new URL("/", nextUrl));
+    }
+
+    // Restriction for managers on non-authorized routes
+    if (role === "manager") {
+      const allowedPaths = [
+        "/admin/dashboard",
+        "/admin/products",
+        "/admin/categories",
+        "/admin/orders",
+        "/admin/expenses",
+        "/admin/blogs"
+      ];
+      const isPathAllowed = allowedPaths.some(path => 
+        nextUrl.pathname === path || nextUrl.pathname.startsWith(path + "/")
+      );
+      if (!isPathAllowed) {
+        return NextResponse.redirect(new URL("/admin/dashboard", nextUrl));
+      }
     }
 
     // /admin/system-design → strictly super_admin
@@ -38,9 +56,9 @@ export const proxy = auth(async (req) => {
     }
   }
 
-  // 3. Redirect /dashboard route to home page / for users, and to /admin/dashboard for admins
+  // 3. Redirect /dashboard route to home page / for users, and to /admin/dashboard for admins/managers
   if (nextUrl.pathname === "/dashboard" || nextUrl.pathname.startsWith("/dashboard/")) {
-    if (role === "admin" || role === "super_admin") {
+    if (role === "admin" || role === "super_admin" || role === "manager") {
       return NextResponse.redirect(new URL("/admin/dashboard", nextUrl));
     }
     return NextResponse.redirect(new URL("/", nextUrl));
