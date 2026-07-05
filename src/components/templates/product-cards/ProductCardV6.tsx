@@ -176,24 +176,7 @@ export default function ProductCardV6({ product, isFlashSale, priority }: Produc
           />
         </Link>
 
-        {/* Unified Ribbon Badge (Top Left) */}
-        {(isFlashSale || discount > 0 || product.isNewArrival || product.isTrending || product.isFeatured) && (
-          <div className="absolute top-0 left-0 overflow-hidden w-24 h-24 z-10 pointer-events-none">
-            <div className={`absolute top-0 left-0 text-[10px] font-black py-1 w-32 text-center -rotate-45 -translate-x-10 translate-y-4 shadow-lg uppercase tracking-widest ${
-              isFlashSale ? 'bg-orange-600 text-white animate-pulse' :
-              discount > 0 ? 'bg-primary text-black dark:text-neutral-900' :
-              product.isNewArrival ? 'bg-emerald-700 text-white' :
-              product.isTrending ? 'bg-rose-600 text-white animate-pulse' :
-              'bg-amber-400 text-neutral-950'
-            }`}>
-              {isFlashSale ? 'Flash' :
-               discount > 0 ? `${discount}% OFF` :
-               product.isNewArrival ? 'New' :
-               product.isTrending ? 'Trending' :
-               'Featured'}
-            </div>
-          </div>
-        )}
+
 
         {/* Hover Actions - Centered circles */}
         <div className="absolute inset-0 hidden md:flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/5 backdrop-blur-[2px]">
@@ -215,22 +198,7 @@ export default function ProductCardV6({ product, isFlashSale, priority }: Produc
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className={`h-12 w-12 rounded-full bg-white shadow-xl transition-all hover:scale-110 ${isInWishlist ? 'text-primary' : 'text-black hover:bg-primary hover:text-white'}`}
-                  onClick={handleWishlist}
-                  aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                >
-                  <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}</p>
-              </TooltipContent>
-            </Tooltip>
+
           </TooltipProvider>
         </div>
       </div>
@@ -261,7 +229,7 @@ export default function ProductCardV6({ product, isFlashSale, priority }: Produc
         <div className="flex flex-col sm:flex-row gap-2 pt-2 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0">
           <Button 
             size="sm" 
-            className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] sm:text-xs h-11 sm:h-10 shadow-lg shadow-primary/20 transition-all active:scale-95 py-2"
+            className="w-full rounded-none bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm sm:text-base h-11 sm:h-10 shadow-lg shadow-primary/20 transition-all active:scale-95 py-2"
             onClick={handleBuyNow}
             disabled={product.stock === 0}
           >
